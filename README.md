@@ -35,10 +35,17 @@ icons/              PWA icons (192, 512)
   hybrid marks and parentheticals are stripped). Family comes from the
   `genusToFamily` map in `data/taxonomy.json`; unknown genera fall back to an
   iNaturalist ancestor lookup.
-- "Similar in genus / family / species" buttons call the read-only iNaturalist API
-  (`api.inaturalist.org/v1`, no key) and graft up to 6 related taxa — with
-  thumbnail photos and attribution — as dashed suggestion nodes. Suggestions are
-  session-only; they are not written back to `plants.json`.
+- Every node — family, genus, species, plant, and pulled-in relatives — is a photo
+  card you can tap for an info panel (rank, lineage, photo + attribution, links).
+  Garden plants use their local `photos/<id>.jpg`; structure nodes lazily fetch a
+  representative photo from iNaturalist.
+- Tapping any node expands it one rank down ("Show genera / species / varieties"),
+  or pulls cousins ("Similar in genus / family / species" on a plant). Each call
+  hits the read-only iNaturalist API (`api.inaturalist.org/v1`, no key) and grafts
+  up to 6 related taxa — de-duplicated against what's already shown. The new nodes
+  are themselves selectable and expandable, so you can drill family → genus →
+  species. "Collapse added" removes a node's fetched children; "Reset" clears all.
+- Pulled relatives are session-only; they are not written back to `plants.json`.
 - External `fetch` and `<img>` work on GitHub Pages and over `file://`, but are
   blocked inside in-chat artifact sandboxes — test the live API on Pages.
 
