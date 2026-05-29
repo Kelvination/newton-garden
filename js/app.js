@@ -30,9 +30,18 @@ async function loadData() {
 function render() {
   const id = location.hash.replace(/^#\/?/, '');
   if (!id) return renderHome();
+  if (id === 'tree') return renderTree();
   const plant = ORDER.find((p) => p.id === id);
   if (!plant) return renderNotFound();
   renderDetail(plant);
+}
+
+function renderTree() {
+  if (window.NewtonTree && DATA) {
+    window.NewtonTree.render(app, DATA.plants);
+  } else {
+    app.innerHTML = `<div class="notfound"><h2>Tree unavailable</h2><p><a href="#/">← Back to garden</a></p></div>`;
+  }
 }
 
 function renderHome() {
@@ -61,6 +70,7 @@ function renderHome() {
     <header class="home-header">
       <h1 class="home-title">Newton Garden</h1>
       <p class="home-subtitle">${DATA.plants.length} plants</p>
+      <a class="tree-link" href="#/tree">View the family tree</a>
     </header>
     ${sections}
     <footer class="home-footer">Tap a plant for care info.</footer>

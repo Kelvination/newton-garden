@@ -9,6 +9,7 @@ Live: <https://kelvination.github.io/newton-garden/>
 - **Static reference site.** All content lives in `data/plants.json`. Each plant has chips (sun/water/season/zone), a stats grid, and care text under standard sections.
 - **Three categories:** Flowers / Herbs / Edibles. The home screen lists each section alphabetically.
 - **Swipe nav** between plants on a detail page. Order matches the home list and wraps across categories.
+- **Living Family Tree** (`#/tree`): a pannable / zoomable taxonomic graph of every plant, grouped family → genus → species → plant. Tap a plant to light up cross-compatibility tiers (same species = cross freely, same genus = maybe, same family = cousins). From a selected plant you can pull related taxa with photos live from the iNaturalist API and graft them onto the tree.
 - **PWA:** installable to the home screen, fully offline once installed (`manifest.json` + `sw.js`).
 - **No build step.** Vanilla HTML / CSS / JS. Push to `main`, GitHub Pages serves the files.
 
@@ -17,13 +18,29 @@ Live: <https://kelvination.github.io/newton-garden/>
 ```
 index.html          single page — hash routing
 manifest.json       PWA manifest
-sw.js               service worker (cache-first shell, network-first plants.json)
+sw.js               service worker (cache-first shell, network-first plants.json + taxonomy.json)
 css/styles.css
+css/tree.css        family-tree view styles
 js/app.js           routing, render, swipe
+js/tree.js          family-tree view: taxonomy, layout, pan/zoom, iNaturalist
 data/plants.json    all plant data
+data/taxonomy.json  genus → family map + family common names
 photos/             one .jpg per plant (royalty-free)
 icons/              PWA icons (192, 512)
 ```
+
+## Family tree (`#/tree`)
+
+- Each plant's `scientificName` is parsed into genus / species (cultivars, `spp.`,
+  hybrid marks and parentheticals are stripped). Family comes from the
+  `genusToFamily` map in `data/taxonomy.json`; unknown genera fall back to an
+  iNaturalist ancestor lookup.
+- "Similar in genus / family / species" buttons call the read-only iNaturalist API
+  (`api.inaturalist.org/v1`, no key) and graft up to 6 related taxa — with
+  thumbnail photos and attribution — as dashed suggestion nodes. Suggestions are
+  session-only; they are not written back to `plants.json`.
+- External `fetch` and `<img>` work on GitHub Pages and over `file://`, but are
+  blocked inside in-chat artifact sandboxes — test the live API on Pages.
 
 ## Adding or editing a plant
 

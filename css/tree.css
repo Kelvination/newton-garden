@@ -1,0 +1,282 @@
+/* ---------- Family Tree view ---------- */
+/* Relationship-tier palette. Cross freely = green, maybe = amber, cousins = slate. */
+:root {
+  --tier-species: #2f5233;
+  --tier-genus: #b07d2b;
+  --tier-family: #5b7a99;
+  --suggestion: #7a6f53;
+  --parchment-line: #d8cdb3;
+}
+
+.tree-view {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at 18% 12%, #fbf8ef 0%, transparent 55%),
+    repeating-linear-gradient(0deg, rgba(170, 150, 110, 0.05) 0, rgba(170, 150, 110, 0.05) 1px, transparent 1px, transparent 26px),
+    var(--bg);
+}
+
+.tree-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: calc(env(safe-area-inset-top) + 8px) 14px 8px;
+  background: rgba(247, 245, 239, 0.92);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(6px);
+  z-index: 3;
+}
+.tree-back {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 14px;
+  padding: 6px 4px;
+  white-space: nowrap;
+}
+.tree-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -0.3px;
+  flex: 1;
+}
+.tree-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.tree-canvas-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.tree-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: grab;
+}
+.tree-svg:active { cursor: grabbing; }
+.tree-svg image { -webkit-user-drag: none; }
+
+/* ---- zoom / fit controls ---- */
+.tree-controls {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 4;
+}
+.tree-controls button {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--border-strong);
+  background: var(--card);
+  color: var(--accent);
+  font-size: 20px;
+  font-weight: 700;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tree-controls button:active { background: #f0ece0; }
+.tree-controls .tc-fit { font-size: 11px; font-weight: 700; }
+
+/* ---- SVG node + link styling ---- */
+.tlink { fill: none; stroke: var(--parchment-line); stroke-width: 1.6; }
+.tlink.suggestion { stroke: var(--suggestion); stroke-dasharray: 4 4; opacity: 0.8; }
+
+/* Font family only — per-element font-size is set as an attribute in tree.js,
+ * and a CSS font-size here would override those. */
+.tree-svg text { font-family: inherit; }
+
+.tnode { cursor: pointer; }
+.tnode .box {
+  fill: var(--card);
+  stroke: var(--border-strong);
+  stroke-width: 1.4;
+}
+.tnode text { fill: var(--text); }
+
+.rank-root .box { fill: var(--accent); stroke: var(--accent); }
+.rank-root text { fill: #fff; font-weight: 800; }
+
+.rank-family .box { fill: #e9f0e1; stroke: #c6d3b4; }
+.rank-family .t-name { font-weight: 800; fill: var(--accent); }
+.rank-family .t-common { fill: #6b7d5a; font-style: italic; }
+
+.rank-genus .box { fill: #f4eedd; stroke: #ddd0ad; }
+.rank-genus text { font-weight: 700; fill: #5c4d2a; }
+
+.rank-species .box { fill: #fbf7ec; stroke: #e2d6b8; }
+.rank-species text { font-style: italic; fill: #6a5b38; }
+
+.rank-plant .box { fill: #ffffff; stroke: var(--border-strong); }
+.rank-plant .t-name { font-weight: 700; fill: var(--text); }
+.rank-plant .t-sci { font-style: italic; fill: var(--text-muted); }
+
+.rank-suggestion .box {
+  fill: #fffdf6;
+  stroke: var(--suggestion);
+  stroke-width: 1.4;
+  stroke-dasharray: 5 4;
+}
+.rank-suggestion .t-common { font-weight: 700; fill: #4a4233; }
+.rank-suggestion .t-sci { font-style: italic; fill: var(--text-muted); }
+.rank-suggestion .t-attr { fill: #a99c7d; }
+.rank-suggestion .sug-tag { fill: #efe7d2; stroke: #ddd0ad; stroke-dasharray: none; stroke-width: 1; }
+.rank-suggestion .sug-tag-text { fill: #7a6f53; font-weight: 700; }
+.rank-suggestion .sug-photo-ph { fill: #efe9da; }
+.rank-suggestion .sug-photo-ph-text { fill: #b3a98a; font-style: italic; }
+
+/* relationship highlight tiers */
+.tnode.dim { opacity: 0.32; }
+.tnode.tier-self .box { stroke: var(--accent); stroke-width: 3.2; }
+.tnode.tier-self { filter: drop-shadow(0 0 6px rgba(47, 82, 51, 0.45)); }
+.tnode.tier-species .box { stroke: var(--tier-species); stroke-width: 3; }
+.tnode.tier-genus .box { stroke: var(--tier-genus); stroke-width: 3; }
+.tnode.tier-family .box { stroke: var(--tier-family); stroke-width: 3; }
+
+/* ---- selection panel (bottom sheet) ---- */
+.tree-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  transform: translateY(110%);
+  transition: transform 0.28s ease;
+  background: var(--card);
+  border-top: 1px solid var(--border-strong);
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.12);
+  padding: 14px 18px calc(env(safe-area-inset-bottom) + 16px);
+  z-index: 5;
+  max-height: 64%;
+  overflow-y: auto;
+}
+.tree-panel.open { transform: translateY(0); }
+
+.tp-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  border: none;
+  background: none;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.tp-name { font-size: 18px; font-weight: 800; color: var(--accent); padding-right: 30px; }
+.tp-sci { font-size: 13px; font-style: italic; color: var(--text-muted); margin-top: 1px; }
+.tp-lineage {
+  font-size: 12px;
+  color: var(--text-soft);
+  margin: 8px 0 10px;
+  font-weight: 600;
+}
+.tp-lineage .sep { color: var(--text-muted); padding: 0 4px; }
+
+.tp-verdict {
+  font-size: 14px;
+  line-height: 1.45;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f6f3ea;
+  border-left: 4px solid var(--text-muted);
+  color: var(--text-soft);
+}
+.tp-verdict.tier-species { border-left-color: var(--tier-species); }
+.tp-verdict.tier-genus { border-left-color: var(--tier-genus); }
+.tp-verdict.tier-family { border-left-color: var(--tier-family); }
+.tp-verdict.tier-alone { border-left-color: var(--text-muted); }
+.tp-verdict strong { color: var(--text); }
+
+.tp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin: 10px 2px 12px;
+  font-size: 11px;
+  color: var(--text-soft);
+}
+.tp-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.tp-legend i {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 2px solid;
+  display: inline-block;
+}
+.tp-legend .lg-species { border-color: var(--tier-species); }
+.tp-legend .lg-genus { border-color: var(--tier-genus); }
+.tp-legend .lg-family { border-color: var(--tier-family); }
+
+.tp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.tp-actions button {
+  flex: 1 1 30%;
+  min-width: 110px;
+  padding: 10px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tp-actions button:active { opacity: 0.8; }
+.tp-actions button[aria-busy="true"] { opacity: 0.7; }
+
+.tp-status {
+  font-size: 12.5px;
+  margin: 10px 0 2px;
+  min-height: 16px;
+  color: var(--text-soft);
+}
+.tp-status.loading { color: var(--accent-2); }
+.tp-status.error { color: #b3402a; }
+.tp-status.ok { color: var(--accent); }
+
+.tp-foot {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  margin-top: 10px;
+  line-height: 1.4;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+
+/* ---- home link to the tree ---- */
+.tree-link {
+  display: inline-block;
+  margin: 12px 0 2px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff !important;
+  font-size: 13px;
+  font-weight: 700;
+}
+.tree-link:active { opacity: 0.85; }
