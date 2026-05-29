@@ -1,10 +1,12 @@
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = `garden-${VERSION}`;
 const APP_SHELL = [
   './',
   './index.html',
   './css/styles.css',
+  './css/tree.css',
   './js/app.js',
+  './js/tree.js',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -28,7 +30,7 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== location.origin) return;
 
-  if (url.pathname.endsWith('plants.json')) {
+  if (url.pathname.endsWith('plants.json') || url.pathname.endsWith('taxonomy.json')) {
     e.respondWith(
       fetch(e.request).then((r) => {
         const copy = r.clone();
